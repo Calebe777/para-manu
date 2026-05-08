@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Para Manu</title>
+<meta name="description" content="Uma retrospectiva especial para Manu.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'DM Sans',sans-serif;color:#fff;-webkit-font-smoothing:antialiased}
+
+/* --- GRAIN OVERLAY --- */
+#grain{position:fixed;top:-50%;left:-50%;width:200%;height:200%;z-index:9998;pointer-events:none;opacity:0.04}
+
+/* --- PROGRESS BAR --- */
+#progress-bar{position:fixed;top:0;left:0;height:2px;background:#c9a84c;z-index:9999;transition:width .3s linear;width:0}
+
+/* --- MUTE BUTTON --- */
+#mute-btn{position:fixed;bottom:20px;right:20px;z-index:9999;background:none;border:1px solid rgba(201,168,76,.3);border-radius:50%;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.4;transition:opacity .3s}
+#mute-btn:hover{opacity:.8}
+#mute-btn svg{width:16px;height:16px;fill:none;stroke:#c9a84c;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* --- SLIDES CONTAINER --- */
+#slides-container{position:relative;width:100vw;height:100vh}
+.slide{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity .8s ease;pointer-events:none;padding:20px}
+.slide.active{opacity:1;pointer-events:auto}
+
+/* --- AMBIENT LIGHT --- */
+.slide::before{content:'';position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.slide:nth-child(odd)::before{background:radial-gradient(ellipse at 50% 100%, rgba(201,168,76,.06) 0%, transparent 60%)}
+.slide:nth-child(even)::before{background:radial-gradient(ellipse at 30% 80%, rgba(201,168,76,.04) 0%, transparent 50%)}
+
+/* --- OPENING SLIDE --- */
+.opening-title{font-family:'Playfair Display',serif;font-size:clamp(3rem,10vw,8rem);font-weight:700;color:#fff;letter-spacing:.05em;position:relative;z-index:1;overflow:hidden}
+.opening-title .letter{display:inline-block;opacity:0;transform:translateY(30px);animation:letterIn .6s ease forwards}
+@keyframes letterIn{to{opacity:1;transform:translateY(0)}}
+.opening-subtitle{font-family:'DM Sans',sans-serif;font-size:clamp(.9rem,2vw,1.3rem);color:#f5f0e8;opacity:0;margin-top:20px;font-weight:300;letter-spacing:.1em;position:relative;z-index:1}
+
+/* --- POLAROID PHOTO SLIDE --- */
+.polaroid-wrap{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center}
+.polaroid{background:#f5f0e8;padding:12px 12px 45px 12px;box-shadow:0 20px 60px rgba(0,0,0,.8),0 5px 20px rgba(0,0,0,.5);position:relative}
+.polaroid img{display:block;width:clamp(160px,35vh,320px);height:clamp(160px,35vh,320px);object-fit:cover;filter:contrast(1.05) saturate(.9)}
+.polaroid::after{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:url() center;pointer-events:none;mix-blend-mode:overlay;opacity:.15}
+.polaroid-caption{display:none} /* Não usado mais, mas mantido pra evitar quebra caso exista HTML legado */
+
+/* --- VIDEO SLIDE --- */
+.video-wrap{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;width:100%;height:100%}
+.video-wrap video{max-width:85vw;max-height:45vh;border-radius:2px;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+.video-vignette{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;box-shadow:inset 0 0 150px 60px rgba(0,0,0,.9)}
+
+/* --- PHRASE SLIDE --- */
+.phrase-text{font-family:'Playfair Display',serif;font-size:clamp(1.5rem,4vw,3rem);color:#f5f0e8;text-align:center;line-height:1.8;max-width:800px;position:relative;z-index:1}
+.phrase-text .word{display:inline-block;opacity:0;margin:0 .2em;transition:opacity .3s ease}
+.phrase-text .word.visible{opacity:1}
+
+/* --- LETTER SLIDE --- */
+.letter-text{font-family:'DM Sans',sans-serif;font-size:clamp(1.2rem,3vw,2rem);color:#f5f0e8;text-align:center;line-height:2;max-width:750px;font-weight:300;position:relative;z-index:1;letter-spacing:.01em}
+.letter-text .word{display:inline-block;opacity:0;margin:0 .15em;transition:opacity .3s ease}
+.letter-text .word.visible{opacity:1}
+.letter-signature{font-family:'Dancing Script',cursive;font-size:clamp(1.3rem,3vw,2rem);color:#c9a84c;margin-top:40px;opacity:0;transition:opacity 1.2s ease;position:relative;z-index:1}
+.letter-signature.visible{opacity:1}
+
+/* --- TAP HINT --- */
+#tap-hint{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);font-size:.7rem;color:rgba(255,255,255,.2);letter-spacing:.15em;text-transform:uppercase;z-index:9997;opacity:0;animation:hintFade 3s ease 2s forwards;pointer-events:none}
+@keyframes hintFade{0%{opacity:0}50%{opacity:1}100%{opacity:0}}
+
+/* --- RESPONSIVE --- */
+@media(max-width:600px){
+  .polaroid{padding:8px 8px 35px 8px}
+  .polaroid img{width:clamp(200px,70vw,300px);height:clamp(200px,70vw,300px)}
+  #mute-btn{bottom:12px;right:12px;width:30px;height:30px}
+}
+</style>
+</head>
+<body>
+
+<!-- GRAIN OVERLAY -->
+<canvas id="grain"></canvas>
+
+<!-- PROGRESS BAR -->
+<div id="progress-bar"></div>
+
+<!-- TAP HINT -->
+<div id="tap-hint">toque para avançar</div>
+
+<!-- AUDIO PLAYER (invisível) -->
+<!-- INSIRA A URL DO ÁUDIO AQUI no atributo src -->
+<audio id="bg-audio" loop preload="auto">
+  <source src="YTDown_YouTube_Coldplay-Sparks-Original-Instrumental-NO_Media_GYXI1I28Rr8_009_128k.mp3" type="audio/mpeg">
+</audio>
+
+<!-- MUTE BUTTON -->
+<button id="mute-btn" aria-label="Mutar áudio">
+  <svg id="icon-sound" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+  <svg id="icon-muted" viewBox="0 0 24 24" style="display:none"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+</button>
+
+<!-- SLIDES CONTAINER -->
+<div id="slides-container"></div>
+
+<script>
+/* =====================================================
+   CONFIGURAÇÃO DE SLIDES
+   Edite este array para adicionar/remover/reordenar
+   ===================================================== */
+const SLIDE_DATA = [
+  // ABERTURA
+  { type: 'opening', title: 'Manu', subtitle: ' a melhor lider do mundo <3' },
+
+  // PARTES DA CARTA (Adicione 'image' ou 'video' onde quiser que apareça uma mídia junto com o texto)
+  { type: 'mixed', text: 'Querida Manu, não sou muito bom com palavras, mas vou tentar porque você merece.' },
+  
+  { type: 'mixed', text: 'Você foi a melhor pessoa que eu conheci nesse último ano, e olha, isso não é pouca coisa não.' },
+  
+  { type: 'mixed', text: 'Você fez por mim o que ninguém faria, acreditou em mim antes mesmo de eu acreditar em mim mesmo...' },
+  
+  { type: 'mixed', text: 'e quando eu entendi isso percebi que seria um erro enorme não dar o meu melhor. Você me ensinou isso sem nem perceber.' },
+  
+  { type: 'mixed', text: 'E por falar em ensinar, você é incrível nisso. Não só no trabalho mas na vida.', image: 'foto 2.jpeg', rotation: 1.8, direction: 'right' },
+  
+  { type: 'mixed', text: 'Você me mostrou que trabalho pode ser leve, pode ser legal, pode ser algo que a gente gosta de fazer.', video: 'video1.mp4', direction: 'up' },
+  
+  { type: 'mixed', text: 'Eu te considero como uma mãe, e isso é sério. Uma mãe que me defendeu quando precisei, que esteve do meu lado quando era mais fácil ficar de fora.', video: 'video2.mp4', direction: 'left' },
+  
+  { type: 'mixed', text: 'Vou sentir sua falta todos os dias no trabalho, mais do que você imagina. Eu nunca vou te esquecer, Manu. Você é daquelas pessoas que ficam para sempre.', image: 'foto 3.jpeg', rotation: -1.2, direction: 'up' },
+  
+  { type: 'mixed', text: 'Desejo tudo de melhor pra você, que a força esteja com você nessa nova jornada. E como disse Gandalf: que você tenha vento a seu favor e sol nas suas costas.' },
+  
+  { type: 'mixed', text: 'Espero ter sido um bom aluno e um bom amigo.', image: 'foto4.png', rotation: 2.0, direction: 'right', signature: 'Com muito carinho e gratidão <br> - Calebe' }
+];
+
+/* =====================================================
+   ENGINE
+   ===================================================== */
+const container = document.getElementById('slides-container');
+const progressBar = document.getElementById('progress-bar');
+const audio = document.getElementById('bg-audio');
+const muteBtn = document.getElementById('mute-btn');
+const grainCanvas = document.getElementById('grain');
+const grainCtx = grainCanvas.getContext('2d');
+
+let slides = [];
+let currentSlide = 0;
+let autoTimer = null;
+let isMuted = false;
+let audioStarted = false;
+
+/* --- Grain Animation --- */
+function resizeGrain() {
+  grainCanvas.width = window.innerWidth;
+  grainCanvas.height = window.innerHeight;
+}
+function renderGrain() {
+  const w = grainCanvas.width, h = grainCanvas.height;
+  const imageData = grainCtx.createImageData(w, h);
+  const data = imageData.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const v = Math.random() * 255;
+    data[i] = data[i+1] = data[i+2] = v;
+    data[i+3] = 255;
+  }
+  grainCtx.putImageData(imageData, 0, 0);
+  requestAnimationFrame(renderGrain);
+}
+window.addEventListener('resize', resizeGrain);
+resizeGrain();
+renderGrain();
+
+/* --- Build slides DOM --- */
+function buildSlides() {
+  SLIDE_DATA.forEach((s, i) => {
+    const el = document.createElement('div');
+    el.className = 'slide';
+    el.dataset.type = s.type;
+    el.dataset.index = i;
+
+    if (s.type === 'opening') {
+      el.innerHTML = `<div class="opening-title" id="open-title"></div><div class="opening-subtitle" id="open-sub">${s.subtitle}</div>`;
+      el._title = s.title;
+    } else if (s.type === 'mixed') {
+      let mediaHTML = '';
+      if (s.image) {
+        const rot = s.rotation || (Math.random()*4-2);
+        const dir = s.direction || 'up';
+        let initTransform = 'translateY(30px)';
+        if (dir === 'left') initTransform = 'translateX(-50px)';
+        else if (dir === 'right') initTransform = 'translateX(50px)';
+        
+        mediaHTML = `<div class="polaroid-wrap" style="margin-bottom: 2.5rem; opacity: 0; transform: ${initTransform}; transition: all 1.4s cubic-bezier(0.2, 0.8, 0.2, 1); display: block; flex: none; height: auto;" data-dir="${dir}"><div class="polaroid" style="transform:rotate(${rot}deg)"><img src="${s.image}" alt="Foto" loading="lazy"></div></div>`;
+      } else if (s.video) {
+        const dir = s.direction || 'up';
+        let initTransform = 'translateY(30px)';
+        if (dir === 'left') initTransform = 'translateX(-50px)';
+        else if (dir === 'right') initTransform = 'translateX(50px)';
+        
+        mediaHTML = `<div class="video-wrap" style="margin-bottom: 2.5rem; opacity: 0; transform: ${initTransform}; transition: all 1.4s cubic-bezier(0.2, 0.8, 0.2, 1); display: block; flex: none; height: auto;" data-dir="${dir}"><video src="${s.video}" muted playsinline loop preload="auto" style="margin: 0 auto; display: block;"></video><div class="video-vignette"></div></div>`;
+      }
+
+      let textHTML = '';
+      if (s.text) {
+        const words = s.text.split(/\s+/).map(w => `<span class="word">${w}</span>`).join(' ');
+        textHTML = `<div class="letter-text" style="flex: none;">${words}</div>`;
+      }
+      
+      let sigHTML = s.signature ? `<div class="letter-signature" style="flex: none;">${s.signature}</div>` : '';
+      
+      el.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;width:100%;">${mediaHTML}${textHTML}${sigHTML}</div>`;
+      el._hasWords = !!s.text;
+      el._hasSignature = !!s.signature;
+    }
+    container.appendChild(el);
+    slides.push(el);
+  });
+}
+
+/* --- Calculate slide duration --- */
+function getSlideDuration(el) {
+  const type = el.dataset.type;
+  if (type === 'opening') return 4000;
+  
+  if (type === 'mixed') {
+    let baseTime = 0;
+    if (el._hasWords) {
+      const wordEls = el.querySelectorAll('.word');
+      baseTime = wordEls.length * 200 + 2000;
+    }
+    const v = el.querySelector('video');
+    if (v && v.duration && isFinite(v.duration)) {
+      return Math.max(baseTime, v.duration * 1000 + 500);
+    }
+    return Math.max(baseTime, 4000);
+  }
+  return 4000;
+}
+
+/* --- Animate opening title letter by letter --- */
+function animateOpening(el) {
+  const titleEl = el.querySelector('#open-title');
+  const subEl = el.querySelector('#open-sub');
+  if (!titleEl) return;
+  const letters = el._title.split('');
+  titleEl.innerHTML = '';
+  letters.forEach((ch, i) => {
+    const span = document.createElement('span');
+    span.className = 'letter';
+    span.textContent = ch;
+    span.style.animationDelay = `${i * 0.15}s`;
+    titleEl.appendChild(span);
+  });
+  const totalLetterTime = letters.length * 150 + 600;
+  setTimeout(() => { subEl.style.opacity = '1'; subEl.style.transition = 'opacity 1s ease'; }, totalLetterTime);
+}
+
+/* --- Animate mixed slides --- */
+function animateMixed(el) {
+  // Animate media first
+  const mediaWrap = el.querySelector('.polaroid-wrap') || el.querySelector('.video-wrap');
+  let mediaDelay = 0;
+  if (mediaWrap) {
+    setTimeout(() => {
+      mediaWrap.style.opacity = '1';
+      mediaWrap.style.transform = 'translate(0px, 0px)';
+    }, 400); // Espera um pouco após o slide dar fade in
+    mediaDelay = 1000; // Texto começa a aparecer depois da mídia
+  }
+
+  // Animate words
+  if (el._hasWords) {
+    const words = el.querySelectorAll('.word');
+    words.forEach((w, i) => {
+      setTimeout(() => w.classList.add('visible'), mediaDelay + i * 200);
+    });
+    if (el._hasSignature) {
+      const sig = el.querySelector('.letter-signature');
+      if (sig) setTimeout(() => sig.classList.add('visible'), mediaDelay + words.length * 200 + 800);
+    }
+  }
+}
+
+/* --- Show slide --- */
+function showSlide(index) {
+  if (index < 0 || index >= slides.length) return;
+  clearTimeout(autoTimer);
+
+  slides.forEach(s => {
+    s.classList.remove('active');
+    // Reseta animação da mídia para funcionar no replay
+    const mediaWrap = s.querySelector('.polaroid-wrap') || s.querySelector('.video-wrap');
+    if (mediaWrap) {
+      mediaWrap.style.opacity = '0';
+      const dir = mediaWrap.dataset.dir || 'up';
+      if (dir === 'left') mediaWrap.style.transform = 'translateX(-50px)';
+      else if (dir === 'right') mediaWrap.style.transform = 'translateX(50px)';
+      else mediaWrap.style.transform = 'translateY(30px)';
+    }
+  });
+  
+  const el = slides[index];
+  el.classList.add('active');
+  currentSlide = index;
+
+  // Update progress
+  progressBar.style.width = `${((index + 1) / slides.length) * 100}%`;
+
+  // Type-specific actions
+  const type = el.dataset.type;
+  if (type === 'opening') animateOpening(el);
+  if (type === 'mixed') animateMixed(el);
+
+  // Video handling
+  const v = el.querySelector('video');
+  if (v) {
+    v.currentTime = 0;
+    v.play().catch(() => {});
+    
+    v.onloadedmetadata = () => {
+      if (v.duration && isFinite(v.duration)) {
+        clearTimeout(autoTimer);
+        autoTimer = setTimeout(nextSlide, Math.max(getSlideDuration(el), v.duration * 1000 + 300));
+      }
+    };
+    if (v.duration && isFinite(v.duration)) {
+      autoTimer = setTimeout(nextSlide, Math.max(getSlideDuration(el), v.duration * 1000 + 300));
+    } else {
+      autoTimer = setTimeout(nextSlide, getSlideDuration(el));
+    }
+  } else {
+    autoTimer = setTimeout(nextSlide, getSlideDuration(el));
+  }
+
+  // Stop any playing video from other slides
+  slides.forEach((s, i) => {
+    if (i !== index) {
+      const otherV = s.querySelector('video');
+      if (otherV) { otherV.pause(); otherV.currentTime = 0; }
+    }
+  });
+}
+
+function nextSlide() {
+  if (currentSlide < slides.length - 1) showSlide(currentSlide + 1);
+}
+
+/* --- Audio --- */
+function startAudio() {
+  if (audioStarted) return;
+  audioStarted = true;
+  audio.volume = 0;
+  audio.play().then(() => {
+    let vol = 0;
+    const fadeIn = setInterval(() => {
+      vol += 0.02;
+      if (vol >= 1) { vol = 1; clearInterval(fadeIn); }
+      audio.volume = vol;
+    }, 40); // 2s fade = 50 steps * 40ms
+  }).catch(() => { audioStarted = false; });
+}
+
+muteBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  isMuted = !isMuted;
+  audio.muted = isMuted;
+  document.getElementById('icon-sound').style.display = isMuted ? 'none' : 'block';
+  document.getElementById('icon-muted').style.display = isMuted ? 'block' : 'none';
+});
+
+/* --- Click/Touch to advance + start audio --- */
+document.addEventListener('click', () => {
+  startAudio();
+  nextSlide();
+});
+
+/* --- Init --- */
+buildSlides();
+showSlide(0);
+startAudio();
+</script>
+</body>
+</html>
